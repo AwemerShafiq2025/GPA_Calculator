@@ -1,0 +1,11 @@
+node_modules/
+dist/
+client/dist/
+coverage/
+.env
+.env.local
+.vercel/
+*.log
+uploads/
+tmp/
+.DS_Store
