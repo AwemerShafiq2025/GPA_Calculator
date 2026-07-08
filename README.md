@@ -1,62 +1,97 @@
 # Pakistan GPA Calculator
 
-A production-ready full-stack Node.js GPA/CGPA calculator for Pakistani university students. It includes university-specific grading scales, SGPA/CGPA calculators, planning tools, editable custom scales, and deterministic transcript upload parsing with no paid AI APIs.
+A full-stack GPA/CGPA calculator for Pakistani universities with transcript parsing, university-specific grading scales, and planning tools (target GPA, grade finder, prediction, and scenarios).
 
-## Architecture
+## Features
 
-- **Frontend:** React + Vite. This keeps the calculator fast, static-build friendly, and simple to deploy on Vercel.
-- **Backend:** Express REST API served locally by `server/index.js` and on Vercel through `api/index.js`.
-- **Shared logic:** `shared/` contains the exact university database and calculation formulas used by both client and server.
-- **Persistence:** stateless by default. Custom scales are saved in browser `localStorage`; the server includes an optional Postgres storage adapter for Vercel Postgres or Supabase via `STORAGE_MODE=postgres`.
-- **Transcript parsing:** PDFs are read with `pdf-parse`; images are OCR'd with Tesseract.js. The extracted text is parsed with deterministic regex rules and checked against the selected grading scale. No OpenAI, Gemini, Claude, or other paid model API is used.
+- University-specific grading systems and point mapping
+- SGPA and CGPA calculation endpoints
+- GPA planning utilities:
+  - target GPA calculator
+  - required grade finder
+  - prediction calculator
+  - scenario comparison
+- Transcript parsing pipeline:
+  - PDF text extraction (`pdf-parse`)
+  - Image OCR (`tesseract.js`)
+  - Editable review before final GPA calculation
+- Custom scale support with stateless-by-default persistence
+- Production-oriented setup for Vercel deployment
 
-## Design
+## Tech Stack
 
-The frontend uses a light-theme glassmorphism design system with translucent panels, soft shadows, and `backdrop-filter` blur/saturation for frosted surfaces. Results keep their performance color meaning through subtle glass tints instead of heavy solid gradients. Browsers without `backdrop-filter` fall back to solid off-white panels with normal borders and shadows.
+- **Frontend:** React + Vite
+- **Backend:** Node.js + Express
+- **Shared domain logic:** `shared/` (used by both client and server)
+- **Optional persistence:** PostgreSQL via `pg`
+- **Testing:** Vitest + Supertest
+- **Code quality:** ESLint + Prettier
 
-Repository URL for your GitHub remote:
+## Project Structure
 
-```bash
-git remote add origin https://github.com/AwemerShafiq2025/GPA_Calculator.git
+```text
+.
+├── api/          # Vercel serverless entry for API routing
+├── client/       # React + Vite frontend
+├── server/       # Express server (local/runtime API)
+├── shared/       # University data + GPA formulas + shared utilities
+├── tests/        # Unit/integration tests
+├── .env.example
+├── package.json
+└── vercel.json
 ```
 
-## Local Setup
+## Quick Start
 
-1. Install Node.js latest LTS.
-2. Install dependencies:
+### 1) Prerequisites
+
+- Node.js (LTS recommended)
+- npm
+
+### 2) Install
 
 ```bash
 npm install
 ```
 
-3. Copy environment defaults:
+### 3) Configure environment
 
 ```bash
-copy .env.example .env
+cp .env.example .env
 ```
 
-4. Start the full app:
+On Windows PowerShell, use:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### 4) Run in development
 
 ```bash
 npm run dev
 ```
 
-5. Open the Vite URL shown in the terminal, usually `http://localhost:5173`.
+- Frontend (Vite): usually `http://localhost:5173`
+- Backend (Express): `http://localhost:5000`
+- In development, frontend requests to `/api` are proxied to Express.
 
-The Express API runs on `http://localhost:5000`; Vite proxies `/api` requests to it during development.
-
-## Scripts
+## Available Scripts
 
 ```bash
-npm run dev      # client + API
-npm run build    # production frontend build
-npm run start    # Express API only
-npm run test     # Vitest unit and integration tests
-npm run lint     # ESLint
-npm run format   # Prettier
+npm run dev      # Run client + server concurrently
+npm run dev:client
+npm run dev:server
+npm run build    # Build frontend for production
+npm run start    # Run Express server
+npm run test     # Run test suite
+npm run lint     # Lint project
+npm run format   # Format project
 ```
 
 ## Environment Variables
+
+Create a `.env` file and configure values like:
 
 ```bash
 PORT=5000
@@ -66,14 +101,14 @@ STORAGE_MODE=stateless
 DATABASE_URL=
 ```
 
-For optional Postgres persistence, set:
+### Optional PostgreSQL mode
 
 ```bash
 STORAGE_MODE=postgres
-DATABASE_URL=your_vercel_postgres_or_supabase_connection_string
+DATABASE_URL=your_postgres_connection_string
 ```
 
-The app works without a database.
+If PostgreSQL is not configured, the app runs in stateless mode.
 
 ## API Routes
 
@@ -87,31 +122,39 @@ The app works without a database.
 - `POST /api/transcript/parse`
 - `POST /api/scales/custom`
 
-## Transcript Upload Notes
+## Transcript Parsing Notes
 
-Upload supports `.pdf`, `.jpg`, `.jpeg`, and `.png`. Text-based PDFs are parsed directly. Images are processed with Tesseract.js in Node. Every result is shown in an editable review table before it replaces the course builder.
+- Supported upload types: `.pdf`, `.jpg`, `.jpeg`, `.png`
+- Text PDFs are parsed directly
+- Images are processed with OCR
+- Parsed output is reviewable/editable before GPA calculation
+- Parser behavior is constrained by the active university scale to reduce invalid grade interpretation
 
-Scanned PDFs without a text layer may need to be uploaded as page images for the OCR path, depending on the hosting environment. The parser never guesses grades outside the active university scale; those rows are flagged for manual correction.
+## Deployment (Vercel)
 
-## Deploy To Vercel
+1. Push code to GitHub.
+2. Import `AwemerShafiq2025/GPA_Calculator` in Vercel.
+3. Build command: `npm run build`
+4. Install command: `npm install`
+5. Configure environment variables from `.env.example`
+6. Keep `STORAGE_MODE=stateless` unless PostgreSQL is configured.
 
-1. Push the project to GitHub:
+`vercel.json` and `api/index.js` handle API routing for deployment.
 
-```bash
-git init
-git add .
-git commit -m "Initial Pakistan GPA Calculator"
-git remote add origin https://github.com/AwemerShafiq2025/GPA_Calculator.git
-git branch -M main
-git push -u origin main
-```
+## Data & Calculation Integrity
 
-2. In Vercel, import `AwemerShafiq2025/GPA_Calculator`.
-3. Use the default install command: `npm install`.
-4. Use the build command: `npm run build`.
-5. Vercel will serve `client/dist` and route `/api/*` to the Express app through `api/index.js`.
-6. Add environment variables from `.env.example`. Leave `STORAGE_MODE=stateless` unless you connect Postgres.
+Core grading datasets and formula logic are centralized in the shared layer so client/server behavior stays consistent.
 
-## Data Integrity
+## Contributing
 
-The university list, grading points, and formulas are ported from the provided specification. University of Lahore (`uol`) is the default on load.
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a pull request
+
+## License
+
+No license file is currently included in this repository.
+If you want open-source usage terms, add a `LICENSE` file (e.g., MIT).
